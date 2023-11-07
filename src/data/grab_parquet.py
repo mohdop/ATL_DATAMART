@@ -9,6 +9,7 @@ def main():
     
 
 def grab_data() -> None:
+    
     """Grab the data from New York Yellow Taxi
 
     This method download x files of the New York Yellow Taxi. 
@@ -16,6 +17,7 @@ def grab_data() -> None:
     Files need to be saved into "../../data/raw" folder
     This methods takes no arguments and returns nothing.
     """
+
 
 
 def write_data_minio():
