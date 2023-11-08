@@ -47,7 +47,7 @@ def grab_data():
                 print(f"{file_name} downloaded successfully.")
 
     else:
-        print(f"Failed to retrieve the page. Status code: {response.status_code}")
+        print(f"Echec.Page non trouvée. Status code: {response.status_code}")
 
 
    
