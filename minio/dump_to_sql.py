@@ -1,22 +1,12 @@
 import gc
 import os
 import sys
-
 import pandas as pd
 from sqlalchemy import create_engine
 
 
 def write_data_postgres(dataframe: pd.DataFrame) -> bool:
-    """
-    Dumps a Dataframe to the DBMS engine
-
-    Parameters:
-        - dataframe (pd.Dataframe) : The dataframe to dump into the DBMS engine
-
-    Returns:
-        - bool : True if the connection to the DBMS and the dump to the DBMS is successful, False if either
-        execution is failed
-    """
+  
     db_config = {
         "dbms_engine": "postgresql",
         "dbms_username": "postgres",
@@ -47,14 +37,7 @@ def write_data_postgres(dataframe: pd.DataFrame) -> bool:
 
 
 def clean_column_name(dataframe: pd.DataFrame) -> pd.DataFrame:
-    """
-    Take a Dataframe and rewrite it columns into a lowercase format.
-    Parameters:
-        - dataframe (pd.DataFrame) : The dataframe columns to change
-
-    Returns:
-        - pd.Dataframe : The changed Dataframe into lowercase format
-    """
+   
     dataframe.columns = map(str.lower, dataframe.columns)
     return dataframe
 
@@ -78,3 +61,6 @@ def main() -> None:
 
 if __name__ == '__main__':
     sys.exit(main())
+    
+    
+

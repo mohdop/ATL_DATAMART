@@ -1,61 +1,53 @@
 from minio import Minio
-import urllib.request
-import pandas as pd
 import os
 import requests
 import sys
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
-
-def main():
-    grab_data()
+import dask.dataframe as dd
 
 def grab_data():
     url = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
-    download_folder = "C:\Archi décisionnelle/ATL-Datamart/data/raw"
+    download_folder = "C:/Archi décisionnelle/ATL-Datamart/data/raw"
 
-    # Créer le fichier téléchargé s'il n'existe pas
+    # Create the download folder if it doesn't exist
     os.makedirs(download_folder, exist_ok=True)
 
-    # Envoyer une requête GET à l'URL
+    # Send a GET request to the URL
     response = requests.get(url)
 
-    # Vérifier si la requête est acceptée(status code 200)
+    # Check if the request was successful (status code 200)
     if response.status_code == 200:
-        # Parser le contenu html de la page
+        # Parse the HTML content of the page
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # Trouver tous les liens dans la page
+        # Find all links on the page
         links = soup.find_all('a')
 
-        # boucler sur les liens et télécharger les fichiers désirés
+        # Iterate through the links and download the desired files
         for link in links:
             href = link.get('href')
             if href and "yellow_tripdata" in href and any(str(year) in href for year in range(2018, 2024)):
                 file_url = urljoin(url, href)
                 file_name = os.path.join(download_folder, href.split("/")[-1])
-
                 print(f"Downloading {file_name}...")
-
-                # Télécharger le fichier
+                
+                # Download the file
                 file_content = requests.get(file_url).content
-
-                # enregistrer le fichier dans le dossier souhaté
+                
+                # Save the file in the download folder
                 with open(file_name, 'wb') as file:
                     file.write(file_content)
-
+                
                 print(f"{file_name} downloaded successfully.")
-
+        
     else:
-        print(f"Echec.Page non trouvée. Status code: {response.status_code}")
-
-
-   
+        print(f"Failed to retrieve the page. Status code: {response.status_code}")
 
 def write_data_minio():
     """
     This method put all Parquet files into Minio
-    Ne pas faire cette méthode pour le moment
+    Do not execute this method for now
     """
     client = Minio(
         "localhost:9000",
@@ -63,12 +55,29 @@ def write_data_minio():
         access_key="minio",
         secret_key="minio123"
     )
-    bucket: str = "NOM_DU_BUCKET_ICI"
+    bucket = "minio"
     found = client.bucket_exists(bucket)
     if not found:
         client.make_bucket(bucket)
     else:
-        print("Bucket " + bucket + " existe déjà")
+        print("Bucket " + bucket + " already exists")
 
+def merge_parquet_files(input_folder, output_file, chunk_size=500000):
+    # List all Parquet files in the input folder
+    parquet_files = [os.path.join(input_folder, f) for f in os.listdir(input_folder) if f.endswith('.parquet')]
+
+    # Initialize an empty Dask DataFrame
+    dfs = [dd.read_parquet(file, engine='pyarrow') for file in parquet_files]
+
+    # Concatenate all Dask DataFrames into one
+    merged_df = dd.concat(dfs, axis=0, ignore_index=True)
+
+    # Write the merged Dask DataFrame to a single Parquet file
+    merged_df.compute().to_parquet(output_file, engine='pyarrow', row_group_size=chunk_size)
+
+def main():
+    write_data_minio()
+    
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+
